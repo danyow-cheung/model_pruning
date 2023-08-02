@@ -115,7 +115,28 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dict = data_dict or check_dataset(data)  # check if None
-    train_path, val_path = data_dict['train'], data_dict['val']
+    # 定義訓練數據集的路徑
+    # train_path, val_path = data_dict['train'], data_dict['val']
+    print('這裡我想改')
+    print(data_dict,type(data_dict))
+    '''
+    data_dict 這裡在後向傳播的時候會用到，估計也要改。
+    而且還要改很多。。。。
+    
+    '''
+
+    print(train_path,type(train_path))
+    print(val_path,type(val_path))
+    '''
+    20230802 上面想改的內容，這樣的話就另外有一個問題了
+    1. train，val數據集都變了
+    ['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007'] <class 'list'>
+    ['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/test2007'] <class 'list'>
+    '''
+
+    train_path, val_path = '',''
+
+
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = {0: 'item'} if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     is_coco = isinstance(val_path, str) and val_path.endswith('coco/val2017.txt')  # COCO dataset
@@ -249,6 +270,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     model.hyp = hyp  # attach hyperparameters to model
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
+    
+    print(model)
+    # 先只看模型結構
+    exit(0)
 
     # Start training
     t0 = time.time()
@@ -323,7 +348,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     loss *= 4.
 
             # Backward
-            scaler.scale(loss).backward()
+            '''
+            在反向傳播的時候，在BN層乘以權重的符合函數輸出和系數就ok
+
+            '''
+            # loss.backward()
+            # scaler.scale(loss).backward()
 
             # Optimize - https://pytorch.org/docs/master/notes/amp_examples.html
             if ni - last_opt_step >= accumulate:
@@ -487,13 +517,12 @@ def parse_opt(known=False):
 
 
 def main(opt, callbacks=Callbacks()):
-    # Checks
+    # Checks 檢查是不是有對應的包
     if RANK in {-1, 0}:
-        print_args(vars(opt))
-        check_git_status()
         check_requirements(ROOT / 'requirements.txt')
 
     # Resume (from specified or most recent last.pt)
+    # 使用預訓練的模型或者最新的
     if opt.resume and not check_comet_resume(opt) and not opt.evolve:
         last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
@@ -531,7 +560,9 @@ def main(opt, callbacks=Callbacks()):
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend='nccl' if dist.is_nccl_available() else 'gloo')
-
+    
+    
+    
     # Train
     if not opt.evolve:
         train(opt.hyp, opt, device, callbacks)

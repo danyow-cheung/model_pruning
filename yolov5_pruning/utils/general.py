@@ -476,9 +476,14 @@ def check_dataset(data, autodownload=True):
     # Download (optional)
     extract_dir = ''
     if isinstance(data, (str, Path)) and (is_zipfile(data) or is_tarfile(data)):
+        # print('下載位置',f'{DATASETS_DIR}/{Path(data).stem}')
         download(data, dir=f'{DATASETS_DIR}/{Path(data).stem}', unzip=True, delete=False, curl=False, threads=1)
         data = next((DATASETS_DIR / Path(data).stem).rglob('*.yaml'))
+        
+        # print('解壓位置',data.parent)
+
         extract_dir, autodownload = data.parent, False
+
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
@@ -601,19 +606,21 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             f = Path(url)  # filename
         else:  # does not exist
             f = dir / Path(url).name
-            LOGGER.info(f'Downloading {url} to {f}...')
-            for i in range(retry + 1):
-                if curl:
-                    success = curl_download(url, f, silent=(threads > 1))
-                else:
-                    torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
-                    success = f.is_file()
-                if success:
-                    break
-                elif i < retry:
-                    LOGGER.warning(f'⚠️ Download failure, retrying {i + 1}/{retry} {url}...')
-                else:
-                    LOGGER.warning(f'❌ Failed to download {url}...')
+            print("沒有數據集")
+            # LOGGER.info(f'Downloading {url} to {f}...')
+            # for i in range(retry + 1):
+            #     if curl:
+            #         success = curl_download(url, f, silent=(threads > 1))
+            #     else:
+            #         torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
+            #         success = f.is_file()
+            #     if success:
+            #         break
+            #     elif i < retry:
+            #         LOGGER.warning(f'⚠️ Download failure, retrying {i + 1}/{retry} {url}...')
+            #     else:
+            #         LOGGER.warning(f'❌ Failed to download {url}...')
+        # print('某個有意義的dir',dir)
 
         if unzip and success and (f.suffix == '.gz' or is_zipfile(f) or is_tarfile(f)):
             LOGGER.info(f'Unzipping {f}...')
