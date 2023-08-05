@@ -433,6 +433,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
+    # yolov5 訓練/驗證 數據加載器，
     cache_version = 0.6  # dataset labels *.cache version
     rand_interp_methods = [cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4]
 
@@ -459,6 +460,9 @@ class LoadImagesAndLabels(Dataset):
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        # self.path=['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', 
+        # '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007']
+        print(f'self.path={self.path}')
         self.albumentations = Albumentations(size=img_size) if augment else None
 
         try:
@@ -476,8 +480,15 @@ class LoadImagesAndLabels(Dataset):
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # to global path (pathlib)
                 else:
                     raise FileNotFoundError(f'{prefix}{p} does not exist')
+            print('test這裡本來就沒有 我嫌棄太大內存了')
+            # 寫這麼麻煩幹什麼，還要我來讀
+            # for x in f:
+            #     if x.split('.')[-1].lower() in IMG_FORMATS:
+            #         print(x)
+            
             self.im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
+            
             assert self.im_files, f'{prefix}No images found'
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}') from e

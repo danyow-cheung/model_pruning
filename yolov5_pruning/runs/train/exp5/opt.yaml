@@ -1,6 +1,6 @@
 weights: yolov5n.pt
 cfg: ''
-data: /Users/danyow/Desktop/model_pruning/yolov5_pruning/data/Argoverse.yaml
+data: /Users/danyow/Desktop/model_pruning/yolov5_pruning/data/VOC.yaml
 hyp:
   lr0: 0.01
   lrf: 0.01

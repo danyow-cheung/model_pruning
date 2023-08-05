@@ -116,26 +116,21 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dict = data_dict or check_dataset(data)  # check if None
     # 定義訓練數據集的路徑
-    # train_path, val_path = data_dict['train'], data_dict['val']
-    print('這裡我想改')
-    print(data_dict,type(data_dict))
+    train_path, val_path = data_dict['train'], data_dict['val']
+
     '''
     data_dict 這裡在後向傳播的時候會用到，估計也要改。
     而且還要改很多。。。。
     
     '''
 
-    print(train_path,type(train_path))
-    print(val_path,type(val_path))
     '''
     20230802 上面想改的內容，這樣的話就另外有一個問題了
     1. train，val數據集都變了
     ['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007'] <class 'list'>
     ['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/test2007'] <class 'list'>
     '''
-
-    train_path, val_path = '',''
-
+    print(f'在訓練字典中的train_path={train_path} val_path = {val_path}')
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = {0: 'item'} if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -272,8 +267,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     model.names = names
     
     print(model)
-    # 先只看模型結構
-    exit(0)
 
     # Start training
     t0 = time.time()
@@ -666,7 +659,7 @@ def main(opt, callbacks=Callbacks()):
 
 
 def run(**kwargs):
-    # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+    # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5n.pt')
     opt = parse_opt(True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
