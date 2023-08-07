@@ -472,7 +472,7 @@ def check_font(font=FONT, progress=False):
 
 def check_dataset(data, autodownload=True):
     # Download, check and/or unzip dataset if not found locally
-
+    
     # Download (optional)
     extract_dir = ''
     if isinstance(data, (str, Path)) and (is_zipfile(data) or is_tarfile(data)):

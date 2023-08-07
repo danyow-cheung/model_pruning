@@ -25,7 +25,10 @@ import time
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+import warnings
+import torch.nn.utils.prune as prune 
 
+warnings.filterwarnings('ignore')
 try:
     import comet_ml  # must be imported before torch (if installed)
 except ImportError:
@@ -105,6 +108,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.register_action(k, callback=getattr(loggers, k))
 
         # Process custom dataset artifact link
+        # print('data_dict等於什麼logger')
+        # 走了這邊
         data_dict = loggers.remote_dataset
         if resume:  # If resuming runs from remote artifact
             weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
@@ -114,23 +119,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     cuda = device.type != 'cpu'
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     with torch_distributed_zero_first(LOCAL_RANK):
+        print('走這邊')
+        # 也走了這邊
         data_dict = data_dict or check_dataset(data)  # check if None
-    # 定義訓練數據集的路徑
+    # 定義訓練數據集的路徑，在這一步需要把訓練集裡面的2012去除掉
     train_path, val_path = data_dict['train'], data_dict['val']
 
-    '''
-    data_dict 這裡在後向傳播的時候會用到，估計也要改。
-    而且還要改很多。。。。
-    
-    '''
-
-    '''
-    20230802 上面想改的內容，這樣的話就另外有一個問題了
-    1. train，val數據集都變了
-    ['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007'] <class 'list'>
-    ['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/test2007'] <class 'list'>
-    '''
-    print(f'在訓練字典中的train_path={train_path} val_path = {val_path}')
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = {0: 'item'} if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -209,6 +203,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         LOGGER.info('Using SyncBatchNorm()')
 
     # Trainloader
+    print(f"train_path={train_path}")
+    '''
+    train_path=[
+    '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2012', 
+    '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', 
+    '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2012', 
+    '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007']
+    '''
     train_loader, dataset = create_dataloader(train_path,
                                               imgsz,
                                               batch_size // WORLD_SIZE,
@@ -266,7 +268,17 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
     
-    print(model)
+    # print(model)
+    '''模型微調'''
+    # 可行的
+    # 非結構化剪枝
+    module = None
+    for name, m in model.named_modules():
+        if isinstance(m, nn.Conv2d): # 如果是conv就進行剪枝
+            module = m 
+            break
+    prune.random_unstructured(module, name="weight", amount=0.3)
+    prune.remove(m, 'weight')  # make permanent 使微調有效
 
     # Start training
     t0 = time.time()
@@ -287,6 +299,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run('on_train_epoch_start')
+        #開始訓練
         model.train()
 
         # Update image weights (optional, single-GPU only)

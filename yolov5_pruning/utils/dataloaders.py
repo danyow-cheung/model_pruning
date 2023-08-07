@@ -463,6 +463,9 @@ class LoadImagesAndLabels(Dataset):
         # self.path=['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', 
         # '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007']
         print(f'self.path={self.path}')
+        ''' 需要去除2012的數字 在voc.yaml裡面改就好了
+        self.path=['/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2012', '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/train2007', '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2012', '/Users/danyow/Desktop/model_pruning/datasets/VOC/images/val2007']
+        '''
         self.albumentations = Albumentations(size=img_size) if augment else None
 
         try:
