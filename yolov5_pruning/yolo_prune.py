@@ -32,9 +32,6 @@ for name, m in model.named_modules():
         module = m 
         break
 
-prune.random_unstructured(module, name="weight", amount=0.3)
-prune.remove(m, 'weight')  # make permanent 使微調有效
-# prune.l1_unstructured(module,name='bias',amount=3)# 不用加這個因為沒有偏差
-
-print('微調之後的模型，樣式')
-print(model)
+# prune.random_unstructured(module, name="weight", amount=0.3)
+# prune.remove(m, 'weight')  # make permanent 使微調有效
+# # prune.l1_unstructured(module,name='bias',amount=3)# 不用加這個因為沒有偏差
